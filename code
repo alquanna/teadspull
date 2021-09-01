@@ -1,0 +1,45 @@
+function myFunction() {
+var options = {
+     "method" : "GET",
+     "headers" : {
+       "Authorization" : "PUT TEADS AUTHORIZATION TOKEN HERE",
+       "Content-Type" : "application/json",
+       "Accept" : "application/json"
+     }
+   };
+
+// Make a GET request and get report URL
+var response = UrlFetchApp.fetch('https://ads.teads.tv/api/reports/[REPORT ID HERE]/latest-file', options);
+var responsetest = JSON.parse(response.getContentText());
+var fileurl = responsetest.url;
+Logger.log(fileurl);
+
+//get the contents of the CSV from the URL and save
+var contents = UrlFetchApp.fetch(fileurl).getBlob();
+
+//BQ Time
+var projectId = 'PUT PROJECT ID HERE';
+var datasetId = 'PUT DATASET NAME HERE';
+var tableId = 'PUT TABLE NAME HERE'
+
+// Load CSV data and convert to the correct format for upload.
+  var data = contents.setContentType('application/octet-stream');
+
+  // Create the data upload job.
+  var job = {
+    configuration: {
+      load: {
+        destinationTable: {
+          projectId: projectId,
+          datasetId: datasetId,
+          tableId: tableId
+        },
+        skipLeadingRows: 1
+      }
+    }
+  };
+  job = BigQuery.Jobs.insert(job, projectId, data);
+  Logger.log('Load job started. Check on the status of it here: ' +
+      'https://bigquery.cloud.google.com/jobs/%s', projectId);
+
+}
